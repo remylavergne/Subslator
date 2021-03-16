@@ -19,9 +19,9 @@ class CSVUtils {
             }
             echo(
                 """
-                ----------------
-                Deserialized CSV Data Summary
-                ----------------
+                ---------------------
+                Deserialized CSV Data
+                ---------------------
                 o ${readCsvFile.size} elements extracted
                 o Operation took $time ms
                 

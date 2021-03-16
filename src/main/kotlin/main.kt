@@ -38,16 +38,16 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
 
         if (!newlyCreated) {
             val walk = output.walkTopDown()
-            TermUi.echo("Generated files: ${walk.count() - 1}")
+            TermUi.echo("Remaining generated files: ${walk.count() - 1}")
             walk.forEach { file: File ->
                 if (file.name != output.name) {
-                    TermUi.echo("File \"${file.name}\" deleted.")
+                    TermUi.echo("-> File \"${file.name}\" deleted...")
                     file.delete()
                 }
             }
-            TermUi.echo("Output directorie(s) cleaned.\n")
+            TermUi.echo("Output directory cleaned.\n")
         } else {
-            TermUi.echo("Output directorie(s) created.\n")
+            TermUi.echo("Output directory created.\n")
         }
     }
 
@@ -56,7 +56,6 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
 
         jsonLines.forEach forEach@{ currentLine: String ->
             val jsonLine = JSONLine(currentLine)
-
             if (!jsonLine.containsKeyValue()) {
                 processedLines.add(ProcessedLine(currentLine, Log.Done))
                 return@forEach
@@ -67,7 +66,11 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
             val processedLine: ProcessedLine = when (currentLineData.state()) {
                 CsvState.List.NoData -> ProcessedLine(currentLine, Log.MissingKey)
                 CsvState.List.DataAvailable -> when (currentLineData.first().state(jsonLine.value)) {
-                    CsvState.State.CorruptedKey -> findClosestTranslation(currentLineData.first(), jsonLine.value)
+                    CsvState.State.CorruptedKey -> findClosestTranslation(
+                        currentLineData.first(),
+                        currentLine,
+                        jsonLine.value
+                    )
                     CsvState.State.MissingTranslation -> ProcessedLine(currentLine, Log.MissingKey)
                     CsvState.State.AlreadyTranslated -> ProcessedLine(currentLine, Log.AlreadyTranslated)
                     CsvState.State.CanBeTranslate -> translateCurrentLine(
@@ -82,7 +85,6 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
                     jsonLine.value
                 )
             }
-
             processedLines.add(processedLine)
         }
 
@@ -97,13 +99,11 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
         }
     }
 
-    private fun findClosestTranslation(csvData: CsvData, valueToTranslate: String): ProcessedLine {
+    private fun findClosestTranslation(csvData: CsvData, line: String, valueToTranslate: String): ProcessedLine {
         val matchPercentage =
             JaroWinklerSimilarity().apply(csvData.originalText, valueToTranslate)
 
-        return ProcessedLine(
-            valueToTranslate, Log.CorruptedKey(csvData, matchPercentage)
-        )
+        return ProcessedLine(line, Log.CorruptedKey(csvData, matchPercentage))
     }
 
     private fun translateCurrentLine(line: String, valueToTranslate: String, valueTranslated: String): ProcessedLine {
@@ -134,7 +134,7 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
                 }
             }
 
-            if (bestMatch != null) {
+            return if (bestMatch != null) {
                 ProcessedLine(line, Log.PossibleMatching(bestMatch!!, highestPercentage))
             } else {
                 ProcessedLine(line, Log.MissingValue)
@@ -144,29 +144,6 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
 }
 
 fun main(args: Array<String>) = JsonTranslator().main(args)
-
-// fun getErrorPercentage(): Int = (failed * 100) / (succeed + failed)
-
-/*
-fun printResult() {
-    println(
-        """
-    ----------------------------------------------------------------------
-                                   REPORT
-    ----------------------------------------------------------------------
-
-    o ${excelData.size} translations available
-    o ${succeed + failed} lines processed
-    o $succeed lines translated automatically
-    o $failed inconsistent lines (~${getErrorPercentage()} %)
-
-    ----------------------------------------------------------------------
-
-""".trimIndent()
-    )
-}
-
- */
 
 /*
  TermUi.echo(
