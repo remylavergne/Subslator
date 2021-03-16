@@ -55,7 +55,7 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
         val processedLines: MutableList<ProcessedLine> = mutableListOf()
 
         jsonLines.forEach forEach@{ currentLine: String ->
-            val jsonLine = JSONLine(currentLine)
+            val jsonLine = JsonLine(currentLine)
             if (!jsonLine.containsKeyValue()) {
                 processedLines.add(ProcessedLine(currentLine, Log.Done))
                 return@forEach

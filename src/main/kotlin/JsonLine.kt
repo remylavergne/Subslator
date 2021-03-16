@@ -1,4 +1,4 @@
-data class JSONLine(val jsonLine: String) {
+data class JsonLine(val jsonLine: String) {
     private val keyValueRegex: Regex = "\"(.+)\"[ ]*:[ ]*\"(.+)\"[,]?\$".toRegex()
     private var find: MatchResult? = null
     val key: String
