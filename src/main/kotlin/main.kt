@@ -9,8 +9,6 @@ import org.apache.commons.text.similarity.JaroWinklerSimilarity
 import java.io.File
 
 
-// TODO: Si la ligne est déjà traduite -> pas erreur
-
 class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", invokeWithoutSubcommand = true) {
     private val input by option("-i", "--input").file(mustExist = true, canBeDir = false)
         .help(help = "The input JSON file to translate path.")
@@ -23,13 +21,15 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
         input?.let { inputFile: File ->
             val outputFile = File("${outputDir.path}/translated-${inputFile.name}")
             createOutputDir(outputDir)
+            // Export + Process data
             val deserialized = CSVUtils.deserialize(sourceData!!)
-
             val jsonLines: List<String> = inputFile.readLines()
             val jsonLinesProcessed: List<ProcessedLine> = translate(deserialized, jsonLines)
-
+            // Logs
             generateTranslatedFile(jsonLinesProcessed, outputFile)
-            generateLogs(jsonLinesProcessed, outputDir, outputFile)
+            JsonLogger(jsonLinesProcessed, outputDir, outputFile)
+                .generateLogFiles()
+                .generateFinalReport()
         }
     }
 
@@ -98,7 +98,6 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
     }
 
     private fun findClosestTranslation(csvData: CsvData, valueToTranslate: String): ProcessedLine {
-        // TODO: Add CsvData informations into logs
         val matchPercentage =
             JaroWinklerSimilarity().apply(csvData.originalText, valueToTranslate)
 
@@ -142,82 +141,6 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
             }
         }
     }
-
-    private fun generateLogs(jsonLinesProcessed: List<ProcessedLine>, outputDir: File, outputFile: File) {
-        // TODO: Trying to get application path ->
-
-        val missingKeysLogs = File("${outputDir.path}/missing-keys-logs.md")
-        val corruptedKeysLogs = File("${outputDir.path}/corrupted-keys-logs.md")
-        val missingTranslationLogs = File("${outputDir.path}/missing-translations.md")
-
-        jsonLinesProcessed.forEachIndexed { index: Int, data: ProcessedLine ->
-            when (data.log) {
-                is Log.CorruptedKey -> {
-                    // TODO: Better analyse
-                    corruptedKeysLogs.appendText(
-                        """
-                            [Original text seems different for line ${index + 1}](vscode://file/${outputFile.path}:${index + 1})
-
-                            ```json
-                            ${data.line.trim()}
-                            
-                            // Match:${data.log.matchPercentage * 100}
-                            // Key:${data.log.data.libelleId}
-                            // Original text:${data.log.data.originalText}
-                            // Translation:${data.log.data.translatedText}
-                            ```
-
-                        """.trimIndent()
-                    )
-                }
-                Log.Done -> {
-                }
-                Log.MissingKey -> {
-                    missingKeysLogs.appendText(
-                        """
-                            [Key missing for line ${index + 1}](vscode://file/${outputFile.path}:${index + 1})
-                 
-                            ```json
-                            ${data.line.trim()}
-                             ```
-                 
-                        """.trimIndent()
-                    )
-                }
-                Log.MissingValue -> {
-                    missingTranslationLogs.appendText(
-                        """
-                        [Value missing for line ${index + 1}](vscode://file/${outputFile.path}:${index + 1})
-                        
-                        ```json
-                        ${data.line.trim()}
-                        ```
-                         
-                    """.trimIndent()
-                    )
-                }
-                is Log.PossibleMatching -> {
-                    corruptedKeysLogs.appendText(
-                        """
-                            [Best translation match for line ${index + 1}](vscode://file/${outputFile.path}:${index + 1})
-
-                            ```json
-                            ${data.line.trim()}
-                            
-                            // Match: ${data.log.matchPercentage * 100}
-                            // Key: ${data.log.data.libelleId}
-                            // Original text: ${data.log.data.originalText}
-                            // Translation: ${data.log.data.translatedText}
-                            ```
-
-                        """.trimIndent()
-                    )
-                }
-                Log.AlreadyTranslated -> {
-                }
-            }
-        }
-    }
 }
 
 fun main(args: Array<String>) = JsonTranslator().main(args)
@@ -245,18 +168,18 @@ fun printResult() {
 
  */
 
- /*
-  TermUi.echo(
-            """  
-                ----------------
-                Translation Summary
-                ----------------
-                o ${csvData.size} translations available
-                o ${0} lines processed
-                o 0 lines translated automatically
-                o 0 inconsistent lines (~${0} %)
-                o Operation took $time ms
-                
-                
-            """.trimIndent()
-        ) */
+/*
+ TermUi.echo(
+           """
+               ----------------
+               Translation Summary
+               ----------------
+               o ${csvData.size} translations available
+               o ${0} lines processed
+               o 0 lines translated automatically
+               o 0 inconsistent lines (~${0} %)
+               o Operation took $time ms
+
+
+           """.trimIndent()
+       ) */
