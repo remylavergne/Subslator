@@ -1,4 +1,4 @@
-data class ProcessedLines(
+data class ProcessedLine(
     val line: String,
     val log: Log
 )

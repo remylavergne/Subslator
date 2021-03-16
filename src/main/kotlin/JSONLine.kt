@@ -1,6 +1,10 @@
 data class JSONLine(val jsonLine: String) {
     private val keyValueRegex: Regex = "\"(.+)\"[ ]*:[ ]*\"(.+)\"[,]?\$".toRegex()
     private var find: MatchResult? = null
+    val key: String
+        get() = this.key()
+    val value: String
+        get() = this.value()
 
     init {
         this.find = keyValueRegex.find(jsonLine)
@@ -8,7 +12,7 @@ data class JSONLine(val jsonLine: String) {
 
     fun containsKeyValue(): Boolean = find != null
 
-    fun key(): String {
+    private fun key(): String {
         return if (this.find != null) {
             this.find!!.groupValues[1]
         } else {
@@ -16,7 +20,7 @@ data class JSONLine(val jsonLine: String) {
         }
     }
 
-    fun value(): String {
+    private fun value(): String {
         return if (this.find != null) {
             this.find!!.groupValues[2]
         } else {

@@ -20,6 +20,9 @@ dependencies {
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.12.2")
     implementation("org.json:json:20201115")
     implementation("org.apache.commons:commons-text:1.9")
+
+    testImplementation("io.mockk:mockk:1.10.6")
+    testImplementation("io.kotest:kotest-assertions-core:4.4.3")
 }
 
 tasks.test {

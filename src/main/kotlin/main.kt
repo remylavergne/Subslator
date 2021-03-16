@@ -4,17 +4,12 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.help
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
-import command.CSV
+import command.CSVUtils
 import org.apache.commons.text.similarity.JaroWinklerSimilarity
 import java.io.File
-import kotlin.system.measureTimeMillis
 
-val missingKeysLogs: File = File("output/missing-keys-logs.md")
-val corruptedKeysLogs: File = File("output/corrupted-keys-logs.md")
-val missingTranslationLogs: File = File("output/missing-translations.md")
 
 // TODO: Si la ligne est déjà traduite -> pas erreur
-
 
 class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", invokeWithoutSubcommand = true) {
     private val input by option("-i", "--input").file(mustExist = true, canBeDir = false)
@@ -28,14 +23,13 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
         input?.let { inputFile: File ->
             val outputFile = File("${outputDir.path}/translated-${inputFile.name}")
             createOutputDir(outputDir)
-            val deserialized = CSV().deserialize(sourceData!!)
+            val deserialized = CSVUtils.deserialize(sourceData!!)
 
             val jsonLines: List<String> = inputFile.readLines()
-            val jsonLinesProcessed: List<ProcessedLines> = translate(deserialized, jsonLines)
-            require(jsonLines.size == jsonLinesProcessed.size)
+            val jsonLinesProcessed: List<ProcessedLine> = translate(deserialized, jsonLines)
 
             generateTranslatedFile(jsonLinesProcessed, outputFile)
-            generateLogs(jsonLinesProcessed, outputFile)
+            generateLogs(jsonLinesProcessed, outputDir, outputFile)
         }
     }
 
@@ -57,108 +51,108 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
         }
     }
 
-    private fun translate(csvData: List<CsvData>, jsonLines: List<String>): List<ProcessedLines> {
-        val processedLines: MutableList<ProcessedLines> = mutableListOf()
+    private fun translate(csvData: List<CsvData>, jsonLines: List<String>): List<ProcessedLine> {
+        val processedLines: MutableList<ProcessedLine> = mutableListOf()
 
-        val time = measureTimeMillis {
-            jsonLines.forEach forEach@{ currentLine: String ->
-                // val matchValues: MatchResult? = keyValueRegex.find(currentLine)
-                val jsonLine = JSONLine(currentLine)
+        jsonLines.forEach forEach@{ currentLine: String ->
+            val jsonLine = JSONLine(currentLine)
 
-                if (!jsonLine.containsKeyValue()) {
-                    processedLines.add(ProcessedLines(currentLine, Log.Done))
-                    return@forEach
-                }
-
-                val currentLineData = csvData.filter { it.libelleId == jsonLine.key() }
-
-                when {
-                    currentLineData.isEmpty() -> {
-                        processedLines.add(ProcessedLines(currentLine, Log.MissingKey))
-                    }
-                    currentLineData.size == 1 -> when {
-                        currentLineData.first().originalText != jsonLine.value() -> {
-                            processedLines.add(ProcessedLines(currentLine, Log.CorruptedKey))
-
-                        }
-                        currentLineData.first().translatedText == null -> {
-                            processedLines.add(ProcessedLines(currentLine, Log.MissingKey))
-                        }
-                        else -> {
-                            val currentLineTranslated = currentLine.replace(
-                                jsonLine.value(),
-                                currentLineData.first().translatedText!!
-                            )
-                            processedLines.add(ProcessedLines(currentLineTranslated, Log.Done))
-                        }
-                    }
-                    currentLineData.size > 1 -> {
-                        val excelData: CsvData? = currentLineData.find { it.originalText == jsonLine.value() }
-                        if (excelData?.translatedText != null) {
-                            val currentLineTranslated = currentLine.replace(
-                                jsonLine.value(),
-                                excelData.translatedText
-                            )
-                            processedLines.add(ProcessedLines(currentLineTranslated, Log.Done))
-                        } else {
-                            var highestPercentage = 0.0
-                            var bestMatch: CsvData? = null
-                            currentLineData.forEach { csvData: CsvData ->
-                                val compare = JaroWinklerSimilarity().apply(jsonLine.value(), csvData.originalText)
-                                if (compare > highestPercentage) {
-                                    highestPercentage = compare
-                                    bestMatch = csvData
-                                }
-                            }
-
-                            if (bestMatch != null) {
-                                processedLines.add(
-                                    ProcessedLines(
-                                        currentLine,
-                                        Log.PossibleMatching(bestMatch!!, highestPercentage.toString())
-                                    )
-                                )
-                            } else {
-                                processedLines.add(ProcessedLines(currentLine, Log.MissingValue))
-                            }
-                        }
-                    }
-                    else -> processedLines.add(ProcessedLines(currentLine, Log.Done))
-                }
+            if (!jsonLine.containsKeyValue()) {
+                processedLines.add(ProcessedLine(currentLine, Log.Done))
+                return@forEach
             }
+
+            val currentLineData = csvData.filter { it.libelleId?.trim() == jsonLine.key.trim() }
+
+            val processedLine: ProcessedLine = when (currentLineData.state()) {
+                CsvState.List.NoData -> ProcessedLine(currentLine, Log.MissingKey)
+                CsvState.List.DataAvailable -> when (currentLineData.first().state(jsonLine.value)) {
+                    CsvState.State.CorruptedKey -> findClosestTranslation(currentLineData.first(), jsonLine.value)
+                    CsvState.State.MissingTranslation -> ProcessedLine(currentLine, Log.MissingKey)
+                    CsvState.State.AlreadyTranslated -> ProcessedLine(currentLine, Log.AlreadyTranslated)
+                    CsvState.State.CanBeTranslate -> translateCurrentLine(
+                        currentLine,
+                        jsonLine.value,
+                        currentLineData.first().translatedText!!
+                    )
+                }
+                CsvState.List.MultipleData -> translateOrFindClosestTranslation(
+                    currentLineData,
+                    currentLine,
+                    jsonLine.value
+                )
+            }
+
+            processedLines.add(processedLine)
         }
 
-        TermUi.echo(
-            """  
-                ----------------
-                Translation Summary
-                ----------------
-                o ${csvData.size} translations available
-                o ${0} lines processed
-                o 0 lines translated automatically
-                o 0 inconsistent lines (~${0} %)
-                o Operation took $time ms
-                
-                
-            """.trimIndent()
-        )
+        require(jsonLines.size == processedLines.size)
 
         return processedLines
     }
 
-    private fun generateTranslatedFile(jsonLinesTranslated: List<ProcessedLines>, outputFile: File) {
-        jsonLinesTranslated.forEach { pl: ProcessedLines ->
+    private fun generateTranslatedFile(jsonLinesTranslated: List<ProcessedLine>, outputFile: File) {
+        jsonLinesTranslated.forEach { pl: ProcessedLine ->
             outputFile.appendText(pl.line + "\n")
         }
     }
 
+    private fun findClosestTranslation(csvData: CsvData, valueToTranslate: String): ProcessedLine {
+        // TODO: Add CsvData informations into logs
+        val matchPercentage =
+            JaroWinklerSimilarity().apply(csvData.originalText, valueToTranslate)
 
-    private fun generateLogs(jsonLinesProcessed: List<ProcessedLines>, outputFile: File) {
-        // TODO: Trying to get application path
+        return ProcessedLine(
+            valueToTranslate, Log.CorruptedKey(csvData, matchPercentage)
+        )
+    }
 
-        jsonLinesProcessed.forEachIndexed { index: Int, data: ProcessedLines ->
+    private fun translateCurrentLine(line: String, valueToTranslate: String, valueTranslated: String): ProcessedLine {
+        val currentLineTranslated = line.replace(valueToTranslate, valueTranslated)
+        return ProcessedLine(currentLineTranslated, Log.Done)
+    }
+
+    private fun translateOrFindClosestTranslation(
+        csvData: List<CsvData>,
+        line: String,
+        valueToTranslate: String,
+    ): ProcessedLine {
+        val excelData: CsvData? = csvData.find { it.originalText == valueToTranslate }
+        return if (excelData?.translatedText != null) {
+            val currentLineTranslated = line.replace(
+                valueToTranslate,
+                excelData.translatedText
+            )
+            ProcessedLine(currentLineTranslated, Log.Done)
+        } else {
+            var highestPercentage = 0.0
+            var bestMatch: CsvData? = null
+            csvData.forEach { currentCsvData: CsvData ->
+                val compare = JaroWinklerSimilarity().apply(valueToTranslate, currentCsvData.originalText)
+                if (compare > highestPercentage) {
+                    highestPercentage = compare
+                    bestMatch = currentCsvData
+                }
+            }
+
+            if (bestMatch != null) {
+                ProcessedLine(line, Log.PossibleMatching(bestMatch!!, highestPercentage))
+            } else {
+                ProcessedLine(line, Log.MissingValue)
+            }
+        }
+    }
+
+    private fun generateLogs(jsonLinesProcessed: List<ProcessedLine>, outputDir: File, outputFile: File) {
+        // TODO: Trying to get application path ->
+
+        val missingKeysLogs = File("${outputDir.path}/missing-keys-logs.md")
+        val corruptedKeysLogs = File("${outputDir.path}/corrupted-keys-logs.md")
+        val missingTranslationLogs = File("${outputDir.path}/missing-translations.md")
+
+        jsonLinesProcessed.forEachIndexed { index: Int, data: ProcessedLine ->
             when (data.log) {
-                Log.CorruptedKey -> {
+                is Log.CorruptedKey -> {
                     // TODO: Better analyse
                     corruptedKeysLogs.appendText(
                         """
@@ -166,13 +160,17 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
 
                             ```json
                             ${data.line.trim()}
+                            
+                            // Match:${data.log.matchPercentage * 100}
+                            // Key:${data.log.data.libelleId}
+                            // Original text:${data.log.data.originalText}
+                            // Translation:${data.log.data.translatedText}
                             ```
 
                         """.trimIndent()
                     )
                 }
                 Log.Done -> {
-
                 }
                 Log.MissingKey -> {
                     missingKeysLogs.appendText(
@@ -194,6 +192,7 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
                         ```json
                         ${data.line.trim()}
                         ```
+                         
                     """.trimIndent()
                     )
                 }
@@ -205,7 +204,7 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
                             ```json
                             ${data.line.trim()}
                             
-                            // Match: ${data.log.matchPercentage}
+                            // Match: ${data.log.matchPercentage * 100}
                             // Key: ${data.log.data.libelleId}
                             // Original text: ${data.log.data.originalText}
                             // Translation: ${data.log.data.translatedText}
@@ -213,6 +212,8 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
 
                         """.trimIndent()
                     )
+                }
+                Log.AlreadyTranslated -> {
                 }
             }
         }
@@ -243,3 +244,19 @@ fun printResult() {
 }
 
  */
+
+ /*
+  TermUi.echo(
+            """  
+                ----------------
+                Translation Summary
+                ----------------
+                o ${csvData.size} translations available
+                o ${0} lines processed
+                o 0 lines translated automatically
+                o 0 inconsistent lines (~${0} %)
+                o Operation took $time ms
+                
+                
+            """.trimIndent()
+        ) */
