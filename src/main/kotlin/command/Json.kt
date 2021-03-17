@@ -17,13 +17,17 @@ import json.JsonLogger
 import org.apache.commons.text.similarity.JaroWinklerSimilarity
 import java.io.File
 
-class Json : CliktCommand(help = "Translate / Replace quickly your JSON values", invokeWithoutSubcommand = true) {
+class Json : CliktCommand(
+    help = "Translate / Replace quickly your JSON values.",
+    invokeWithoutSubcommand = true,
+    printHelpOnEmptyArgs = true
+) {
     private val input by option("-i", "--input").file(mustExist = true, canBeDir = false)
-        .help(help = "The input JSON file to translate path.")
+        .help(help = "The input JSON file to translate")
     private val sourceData by option("-d", "--data").file(mustExist = true, canBeDir = false)
-        .help(help = "The CSV file who contains translate informations.")
+        .help(help = "The CSV file which contains translate values")
     private val outputDir by option("-o", "--out-dir").file(canBeDir = true)
-        .help(help = "The CSV file who contains translate informations.").default(File("output"))
+        .help(help = "(Optional) The output directory for generated files (default: ./output").default(File("output"))
 
     override fun run() {
         input?.let { inputFile: File ->
