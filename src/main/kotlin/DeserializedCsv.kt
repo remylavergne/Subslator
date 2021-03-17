@@ -13,7 +13,7 @@ class CSVUtils {
     companion object {
 
         fun deserialize(file: File): List<CsvData> {
-            var readCsvFile: List<CsvData> = emptyList()
+            var readCsvFile: List<CsvData>
             val time = measureTimeMillis {
                 readCsvFile = readCsvFile<CsvData>(file.path)
             }
