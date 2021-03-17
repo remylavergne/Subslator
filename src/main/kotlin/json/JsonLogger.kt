@@ -1,4 +1,8 @@
+package json
+
+import ProcessedLine
 import com.github.ajalt.clikt.output.TermUi.echo
+import domain.Log
 import java.io.File
 
 data class JsonLogger(

@@ -1,3 +1,4 @@
+import domain.CsvUtils
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import java.io.File
@@ -14,7 +15,7 @@ class CSVUtilsTest : FunSpec({
         // Write in file
         file.appendText(csvRawData)
 
-        val deserialize = CSVUtils.deserialize(file)
+        val deserialize = CsvUtils.deserialize(file)
 
         deserialize.size shouldBe 1
         deserialize.first().libelleId shouldBe "JSON_KEY"

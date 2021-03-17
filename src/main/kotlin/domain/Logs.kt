@@ -1,3 +1,5 @@
+package domain
+
 sealed class Log {
     object Done : Log()
     object AlreadyTranslated : Log()
