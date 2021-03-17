@@ -18,5 +18,8 @@ class CSVUtilsTest : FunSpec({
 
         deserialize.size shouldBe 1
         deserialize.first().libelleId shouldBe "JSON_KEY"
+
+        // Clean mess
+        file.delete()
     }
 })
