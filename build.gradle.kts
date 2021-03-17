@@ -38,10 +38,13 @@ tasks.withType<KotlinCompile>() {
 application {
     mainClassName = "MainKt"
 }
-/*
-shadowJar {
+
+tasks.shadowJar {
     archiveBaseName.set("shadow")
     archiveClassifier.set("")
     archiveVersion.set("")
+    manifest {
+        attributes(mapOf("Main-Class" to application.mainClassName))
+    }
 }
- */
+

@@ -1,11 +1,5 @@
 package command
 
-import CSVUtils
-import CsvData
-import CsvState
-import JsonLine
-import JsonLogger
-import Log
 import ProcessedLine
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.output.TermUi
@@ -13,11 +7,17 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.help
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
+import domain.CsvData
+import domain.CsvState
+import domain.CsvUtils
+import domain.Log
+import domain.ext.state
+import json.JsonLine
+import json.JsonLogger
 import org.apache.commons.text.similarity.JaroWinklerSimilarity
-import state
 import java.io.File
 
-class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", invokeWithoutSubcommand = true) {
+class Json : CliktCommand(help = "Translate / Replace quickly your JSON values", invokeWithoutSubcommand = true) {
     private val input by option("-i", "--input").file(mustExist = true, canBeDir = false)
         .help(help = "The input JSON file to translate path.")
     private val sourceData by option("-d", "--data").file(mustExist = true, canBeDir = false)
@@ -30,7 +30,7 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
             val outputFile = File("${outputDir.path}/translated-${inputFile.name}")
             createOutputDir(outputDir)
             // Export + Process data
-            val deserialized = CSVUtils.deserialize(sourceData!!)
+            val deserialized = CsvUtils.deserialize(sourceData!!)
             val jsonLines: List<String> = inputFile.readLines()
             val jsonLinesProcessed: List<ProcessedLine> = translate(deserialized, jsonLines)
             // Logs
@@ -97,7 +97,6 @@ class JsonTranslator : CliktCommand(help = "Translate quickly your JSON file", i
         }
 
         require(jsonLines.size == processedLines.size)
-
         return processedLines
     }
 
