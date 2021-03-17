@@ -1,6 +1,3 @@
-package command
-
-import CsvData
 import com.fasterxml.jackson.dataformat.csv.CsvMapper
 import com.fasterxml.jackson.dataformat.csv.CsvSchema
 import com.github.ajalt.clikt.output.TermUi.echo
