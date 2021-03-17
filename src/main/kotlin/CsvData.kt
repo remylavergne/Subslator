@@ -36,8 +36,8 @@ fun List<CsvData>.state(): CsvState.List = when {
 }
 
 fun CsvData.state(toTranslate: String): CsvState.State = when {
-    this.originalText != toTranslate -> CsvState.State.CorruptedKey
     this.translatedText == null -> CsvState.State.MissingTranslation
     this.translatedText == toTranslate -> CsvState.State.AlreadyTranslated
+    this.originalText != toTranslate -> CsvState.State.CorruptedKey
     else -> CsvState.State.CanBeTranslate
 }
