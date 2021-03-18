@@ -3,7 +3,6 @@ package command
 import ProcessedLine
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.output.TermUi
-import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.help
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
@@ -16,6 +15,7 @@ import json.JsonLine
 import json.JsonLogger
 import org.apache.commons.text.similarity.JaroWinklerSimilarity
 import java.io.File
+import kotlin.system.exitProcess
 
 class Json : CliktCommand(
     help = "Translate / Replace quickly your JSON values.",
@@ -26,40 +26,49 @@ class Json : CliktCommand(
         .help(help = "The input JSON file to translate")
     private val sourceData by option("-d", "--data").file(mustExist = true, canBeDir = false)
         .help(help = "The CSV file which contains translate values")
-    private val outputDir by option("-o", "--out-dir").file(canBeDir = true)
-        .help(help = "(Optional) The output directory for generated files (default: ./output").default(File("output"))
 
     override fun run() {
-        input?.let { inputFile: File ->
-            val outputFile = File("${outputDir.path}/translated-${inputFile.name}")
-            createOutputDir(outputDir)
-            // Export + Process data
-            val deserialized = CsvUtils.deserialize(sourceData!!)
-            val jsonLines: List<String> = inputFile.readLines()
-            val jsonLinesProcessed: List<ProcessedLine> = translate(deserialized, jsonLines)
-            // Logs
-            generateTranslatedFile(jsonLinesProcessed, outputFile)
-            JsonLogger(jsonLinesProcessed, outputDir, outputFile)
-                .generateLogFiles()
-                .generateFinalReport()
+        val outputDir = File("${input!!.parent}/output-${input!!.nameWithoutExtension}")
+        val outputFile = File("${outputDir.path}/translated-${input!!.name}")
+
+        val newOutputDir = createOutputDir(outputDir)
+        if (!newOutputDir) {
+            promptToCleanupOutput(outputDir)
         }
+        // Export + Process data
+        val deserialized = CsvUtils.deserialize(sourceData!!)
+        val jsonLines: List<String> = input!!.readLines()
+        val jsonLinesProcessed: List<ProcessedLine> = translate(deserialized, jsonLines)
+        // Logs
+        generateTranslatedFile(jsonLinesProcessed, outputFile)
+        JsonLogger(jsonLinesProcessed, outputDir, outputFile)
+            .generateLogFiles()
+            .generateFinalReport()
     }
 
-    private fun createOutputDir(output: File) {
-        val newlyCreated = output.mkdirs()
+    private fun createOutputDir(output: File): Boolean {
+        return output.mkdirs()
+    }
 
-        if (!newlyCreated) {
-            val walk = output.walkTopDown()
-            TermUi.echo("Remaining generated files: ${walk.count() - 1}")
-            walk.forEach { file: File ->
-                if (file.name != output.name) {
-                    TermUi.echo("-> File \"${file.name}\" deleted...")
-                    file.delete()
+    private fun promptToCleanupOutput(outputDir: File) {
+        val walk = outputDir.walkTopDown()
+        val existingFiles = (walk.count() - 1) > 0
+        if (existingFiles) {
+            TermUi.echo("${walk.count() - 1} generated file(s) already exists.")
+            val prompt =
+                TermUi.prompt("To continue, these files will be overwrite, are you agree? (yes/no)", default = "no")
+
+            if (prompt == "yes") {
+                walk.forEach { file: File ->
+                    if (file.name != outputDir.name) {
+                        TermUi.echo("-> File \"${file.name}\" deleted...")
+                        file.delete()
+                    }
                 }
+                TermUi.echo("Output directory cleaned.\n")
+            } else {
+                exitProcess(1)
             }
-            TermUi.echo("Output directory cleaned.\n")
-        } else {
-            TermUi.echo("Output directory created.\n")
         }
     }
 
