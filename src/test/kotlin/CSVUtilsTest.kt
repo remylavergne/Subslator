@@ -9,8 +9,8 @@ class CSVUtilsTest : FunSpec({
         val file = File("test-deserialization.csv")
         // Data
         val csvRawData = """
-            ID-libelle;Texte;Libellé à traduire;Traduction
-            JSON_KEY;Text into JSON;Text into JSON;Le texte présent dans le JSON 
+            json_key;original_text;original_text_translated
+            JSON_KEY;Text into JSON;Le texte présent dans le JSON 
         """.trimIndent()
         // Write in file
         file.appendText(csvRawData)
