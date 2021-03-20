@@ -1,4 +1,4 @@
-import domain.CsvUtils
+import dev.remylavergne.subslator.domain.CsvUtils
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import java.io.File

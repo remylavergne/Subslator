@@ -36,7 +36,7 @@ tasks.withType<KotlinCompile>() {
 }
 
 application {
-    mainClassName = "MainKt"
+    mainClassName = "dev.remylavergne.subslator.MainKt"
 }
 
 tasks.shadowJar {

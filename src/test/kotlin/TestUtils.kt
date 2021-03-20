@@ -34,4 +34,12 @@ object TestUtils {
 
         return file
     }
+
+    fun createOutputDir(path: String = "output"): File {
+        return File(path)
+    }
+
+    fun createOutputFile(name: String = "translated-file.json"): File {
+        return File(name)
+    }
 }
