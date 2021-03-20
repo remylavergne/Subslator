@@ -1,6 +1,6 @@
-import domain.CsvData
-import domain.CsvState
-import domain.ext.state
+import dev.remylavergne.subslator.domain.CsvData
+import dev.remylavergne.subslator.domain.CsvState
+import dev.remylavergne.subslator.domain.ext.state
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -27,7 +27,7 @@ class CsvDataTest : FunSpec({
         state shouldBe CsvState.List.MultipleData
     }
 
-    test("domain.CsvData State -> JSON value to translate exists in CSV but doesn't match") {
+    test("CsvData State -> JSON value to translate exists in CSV but doesn't match") {
         val data: CsvData = CsvData("", "", "Original text to translate", "")
 
         val state = data.state("Original text to translate !")
@@ -35,7 +35,7 @@ class CsvDataTest : FunSpec({
         state shouldBe CsvState.State.CorruptedKey
     }
 
-    test("domain.CsvData State -> JSON value matches Original value but translation is missing") {
+    test("CsvData State -> JSON value matches Original value but translation is missing") {
         val data: CsvData = CsvData("", "", "Original text to translate", null)
 
         val state = data.state("Original text to translate")
@@ -43,7 +43,7 @@ class CsvDataTest : FunSpec({
         state shouldBe CsvState.State.MissingTranslation
     }
 
-    test("domain.CsvData State -> JSON value is already translated") {
+    test("CsvData State -> JSON value is already translated") {
         val data: CsvData = CsvData("", "", "Original text to translate", "Texte original à traduire")
 
         val state = data.state("Texte original à traduire")
@@ -51,7 +51,7 @@ class CsvDataTest : FunSpec({
         state shouldBe CsvState.State.AlreadyTranslated
     }
 
-    test("domain.CsvData State -> All conditions allowed to translate JSON value") {
+    test("CsvData State -> All conditions allowed to translate JSON value") {
         val data: CsvData = CsvData("", "", "Original text to translate", "Texte original à traduire")
 
         val state = data.state("Original text to translate")

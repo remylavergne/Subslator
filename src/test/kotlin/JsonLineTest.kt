@@ -1,4 +1,4 @@
-import json.JsonLine
+import dev.remylavergne.subslator.json.JsonLine
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 

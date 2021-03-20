@@ -1,4 +1,4 @@
-package domain
+package dev.remylavergne.subslator.domain
 
 sealed class CsvState {
     sealed class List : CsvState() {

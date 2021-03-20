@@ -1,21 +1,15 @@
-package command
+package dev.remylavergne.subslator.command
 
-import ProcessedLine
 import com.github.ajalt.clikt.core.CliktCommand
-import com.github.ajalt.clikt.output.TermUi
 import com.github.ajalt.clikt.parameters.options.help
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
-import domain.CsvData
-import domain.CsvState
-import domain.CsvUtils
-import domain.Log
-import domain.ext.state
-import json.JsonLine
-import json.JsonLogger
+import dev.remylavergne.subslator.common.OutputData
+import dev.remylavergne.subslator.domain.*
+import dev.remylavergne.subslator.domain.ext.state
+import dev.remylavergne.subslator.json.JsonLine
+import dev.remylavergne.subslator.json.JsonLogger
 import org.apache.commons.text.similarity.JaroWinklerSimilarity
-import java.io.File
-import kotlin.system.exitProcess
 
 class Json : CliktCommand(
     help = "Translate / Replace quickly your JSON values.",
@@ -28,48 +22,15 @@ class Json : CliktCommand(
         .help(help = "The CSV file which contains translate values")
 
     override fun run() {
-        val outputDir = File("${input!!.parent}/output-${input!!.nameWithoutExtension}")
-        val outputFile = File("${outputDir.path}/translated-${input!!.name}")
-
-        val newOutputDir = createOutputDir(outputDir)
-        if (!newOutputDir) {
-            promptToCleanupOutput(outputDir)
-        }
+        val outputData = OutputData(input!!)
         // Export + Process data
         val deserialized = CsvUtils.deserialize(sourceData!!)
         val jsonLines: List<String> = input!!.readLines()
-        val jsonLinesProcessed: List<ProcessedLine> = translate(deserialized, jsonLines)
+        val jsonLinesProcessed: List<ProcessedLine> = translate(deserialized, jsonLines).toFile(outputData)
         // Logs
-        generateTranslatedFile(jsonLinesProcessed, outputFile)
-        JsonLogger(jsonLinesProcessed, outputDir, outputFile)
+        JsonLogger(jsonLinesProcessed, outputData)
             .generateLogFiles()
             .generateFinalReport()
-    }
-
-    private fun createOutputDir(output: File): Boolean {
-        return output.mkdirs()
-    }
-
-    private fun promptToCleanupOutput(outputDir: File) {
-        val walk = outputDir.walkTopDown()
-        val existingFiles = (walk.count() - 1) > 0
-        if (existingFiles) {
-            TermUi.echo("${walk.count() - 1} generated file(s) already exists.")
-            val prompt =
-                TermUi.prompt("To continue, these files will be overwrite, are you agree? (yes/no)", default = "no")
-
-            if (prompt == "yes") {
-                walk.forEach { file: File ->
-                    if (file.name != outputDir.name) {
-                        TermUi.echo("-> File \"${file.name}\" deleted...")
-                        file.delete()
-                    }
-                }
-                TermUi.echo("Output directory cleaned.\n")
-            } else {
-                exitProcess(1)
-            }
-        }
     }
 
     private fun translate(csvData: List<CsvData>, jsonLines: List<String>): List<ProcessedLine> {
@@ -111,12 +72,6 @@ class Json : CliktCommand(
 
         require(jsonLines.size == processedLines.size)
         return processedLines
-    }
-
-    private fun generateTranslatedFile(jsonLinesTranslated: List<ProcessedLine>, outputFile: File) {
-        jsonLinesTranslated.forEach { pl: ProcessedLine ->
-            outputFile.appendText(pl.line + "\n")
-        }
     }
 
     private fun findClosestTranslation(csvData: CsvData, line: String, valueToTranslate: String): ProcessedLine {
