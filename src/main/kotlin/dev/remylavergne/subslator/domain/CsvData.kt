@@ -5,12 +5,10 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class CsvData(
-    @JsonProperty("ID-libelle")
-    val libelleId: String?,
-    @JsonProperty("Texte")
-    val texte: String?,
-    @JsonProperty("Libellé à traduire")
+    @JsonProperty("json_key")
+    val jsonKey: String?,
+    @JsonProperty("original_text")
     val originalText: String,
-    @JsonProperty("Traduction")
+    @JsonProperty("original_text_translated")
     val translatedText: String?
 )

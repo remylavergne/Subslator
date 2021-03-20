@@ -12,7 +12,7 @@ class CsvDataTest : FunSpec({
     }
 
     test("ListState -> Translation data available") {
-        val csvData: List<CsvData> = listOf(CsvData("", "", "", ""))
+        val csvData: List<CsvData> = listOf(CsvData("", "", ""))
         val state = csvData.state()
         state shouldBe CsvState.List.DataAvailable
     }
@@ -20,15 +20,15 @@ class CsvDataTest : FunSpec({
     test("ListState -> Multiple translation data found -> duplicate keys") {
         val csvData: List<CsvData> =
             listOf(
-                CsvData("", "", "", ""),
-                CsvData("", "", "", ""),
+                CsvData("", "", ""),
+                CsvData("", "", ""),
             )
         val state = csvData.state()
         state shouldBe CsvState.List.MultipleData
     }
 
     test("CsvData State -> JSON value to translate exists in CSV but doesn't match") {
-        val data: CsvData = CsvData("", "", "Original text to translate", "")
+        val data: CsvData = CsvData("", "", "Original text to translate")
 
         val state = data.state("Original text to translate !")
 
@@ -36,7 +36,7 @@ class CsvDataTest : FunSpec({
     }
 
     test("CsvData State -> JSON value matches Original value but translation is missing") {
-        val data: CsvData = CsvData("", "", "Original text to translate", null)
+        val data: CsvData = CsvData("", "", null)
 
         val state = data.state("Original text to translate")
 
@@ -44,7 +44,7 @@ class CsvDataTest : FunSpec({
     }
 
     test("CsvData State -> JSON value is already translated") {
-        val data: CsvData = CsvData("", "", "Original text to translate", "Texte original à traduire")
+        val data: CsvData = CsvData("", "", "Texte original à traduire")
 
         val state = data.state("Texte original à traduire")
 
@@ -52,7 +52,7 @@ class CsvDataTest : FunSpec({
     }
 
     test("CsvData State -> All conditions allowed to translate JSON value") {
-        val data: CsvData = CsvData("", "", "Original text to translate", "Texte original à traduire")
+        val data: CsvData = CsvData("", "Original text to translate", "Texte original à traduire")
 
         val state = data.state("Original text to translate")
 
