@@ -26,7 +26,7 @@ data class JsonLogger(
                             ${data.line.trim()}
                             
                             // Match: ${data.log.matchPercentage * 100}
-                            // Key: ${data.log.data.libelleId}
+                            // Key: ${data.log.data.jsonKey}
                             // Original: ${data.log.data.originalText}
                             // Translation: ${data.log.data.translatedText}
                             ```
@@ -69,7 +69,7 @@ data class JsonLogger(
                             ${data.line.trim()}
                             
                             // Match: ${data.log.matchPercentage * 100}
-                            // Key: ${data.log.data.libelleId}
+                            // Key: ${data.log.data.jsonKey}
                             // Original: ${data.log.data.originalText}
                             // Translation: ${data.log.data.translatedText}
                             ```

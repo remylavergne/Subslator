@@ -18,7 +18,7 @@ class CSVUtilsTest : FunSpec({
         val deserialize = CsvUtils.deserialize(file)
 
         deserialize.size shouldBe 1
-        deserialize.first().libelleId shouldBe "JSON_KEY"
+        deserialize.first().jsonKey shouldBe "JSON_KEY"
 
         // Clean mess
         file.delete()

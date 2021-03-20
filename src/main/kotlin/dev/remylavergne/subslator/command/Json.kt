@@ -43,7 +43,7 @@ class Json : CliktCommand(
                 return@forEach
             }
 
-            val currentLineData = csvData.filter { it.libelleId?.trim() == jsonLine.key.trim() }
+            val currentLineData = csvData.filter { it.jsonKey?.trim() == jsonLine.key.trim() }
 
             val processedLine: ProcessedLine = when (currentLineData.state()) {
                 CsvState.List.NoData -> ProcessedLine(currentLine, Log.MissingKey)
