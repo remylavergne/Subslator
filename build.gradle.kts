@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "dev.remylavergne"
-version = "1.0-SNAPSHOT"
+version = "0.1.2"
 
 repositories {
     mavenCentral()
@@ -42,7 +42,7 @@ application {
 tasks.shadowJar {
     archiveBaseName.set("shadow")
     archiveClassifier.set("")
-    archiveVersion.set("")
+    archiveVersion.set(version)
     manifest {
         attributes(mapOf("Main-Class" to application.mainClassName))
     }

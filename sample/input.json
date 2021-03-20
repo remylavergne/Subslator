@@ -1,0 +1,7 @@
+{
+  "FIRST_KEY": "First value",
+  "SECOND_KEY": "Second value",
+  "NESTED": {
+    "FIRST_NESTED_KEY": "First nested value"
+  }
+}
