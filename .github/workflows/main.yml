@@ -8,7 +8,7 @@ on:
   # push:
   #   branches: [develop]
   pull_request:
-    branches: [develop]
+    branches: [ develop ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -39,6 +39,8 @@ jobs:
             ${{ runner.os }}-gradle-
       - name: Build with Gradle
         run: ./gradlew build
+      - name: ktlint-pr-comments
+        uses: le0nidas/ktlint-pr-comments@v1
       - name: Cleanup Gradle Cache
         # Remove some files from the Gradle cache, so they aren't cached by GitHub Actions.
         # Restoring these files from a GitHub Actions cache might cause problems for future builds.
