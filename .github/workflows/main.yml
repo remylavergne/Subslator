@@ -41,6 +41,8 @@ jobs:
         run: ./gradlew build
       - name: ktlint-pr-comments
         uses: le0nidas/ktlint-pr-comments@v1
+        with:
+          repotoken: ${{ secrets.GITHUB_TOKEN }}
       - name: Cleanup Gradle Cache
         # Remove some files from the Gradle cache, so they aren't cached by GitHub Actions.
         # Restoring these files from a GitHub Actions cache might cause problems for future builds.
