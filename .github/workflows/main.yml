@@ -28,15 +28,6 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
-      - name: Cache Gradle packages
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
       - name: Build with Gradle
         run: ./gradlew build
       - name: ktlint-pr-comments
@@ -53,3 +44,12 @@ jobs:
         run: ./gradlew test
       - name: Build with Gradle
         run: ./gradlew build
+               - name: Cache Gradle packages
+               uses: actions/cache@v2
+               with:
+                 path: |
+                   ~/.gradle/caches
+                   ~/.gradle/wrapper
+                 key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+                 restore-keys: |
+                   ${{ runner.os }}-gradle-
