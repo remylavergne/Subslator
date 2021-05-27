@@ -3,5 +3,8 @@
   "SECOND_KEY": "Second value",
   "NESTED": {
     "FIRST_NESTED_KEY": "First nested value"
-  }
+  },
+  "SAME_KEY": "SAME_KEY",
+  "SAME_KEY":"SAME_KEY",
+  "SAME_KEY":   "SAME_KEY"
 }
