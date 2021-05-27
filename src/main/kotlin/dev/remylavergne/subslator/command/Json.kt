@@ -56,8 +56,7 @@ class Json : CliktCommand(
                     CsvState.State.MissingTranslation -> ProcessedLine(currentLine, Log.MissingKey)
                     CsvState.State.AlreadyTranslated -> ProcessedLine(currentLine, Log.AlreadyTranslated)
                     CsvState.State.CanBeTranslate -> translateCurrentLine(
-                        currentLine,
-                        jsonLine.value,
+                        jsonLine,
                         currentLineData.first().translatedText!!
                     )
                 }
@@ -81,8 +80,15 @@ class Json : CliktCommand(
         return ProcessedLine(line, Log.CorruptedKey(csvData, matchPercentage))
     }
 
-    private fun translateCurrentLine(line: String, valueToTranslate: String, valueTranslated: String): ProcessedLine {
-        val currentLineTranslated = line.replace(valueToTranslate, valueTranslated)
+    private fun translateCurrentLine(jsonLine: JsonLine, valueTranslated: String): ProcessedLine {
+
+        val currentLineTranslated = if (jsonLine.keyEqValue) {
+            val keyAndValue = jsonLine.raw.split(":")
+            "${keyAndValue[0]}:${keyAndValue[1].replace(jsonLine.value, valueTranslated)}"
+        } else {
+            jsonLine.raw.replace(jsonLine.value, valueTranslated)
+        }
+
         return ProcessedLine(currentLineTranslated, Log.Done)
     }
 

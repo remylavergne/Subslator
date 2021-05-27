@@ -1,3 +1,3 @@
 
-rootProject.name = "json-translator"
+rootProject.name = "subslator"
 
